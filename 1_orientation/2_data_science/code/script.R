@@ -141,6 +141,11 @@ BB_big <- listings %>%
 
 # What's the average price per person to stay at an AirBnB in Boston? Let's see how to construct a simple summary table in which we'll display the average rating and price-per-guest by neighborhood. We can use the accommodates field as a simple estimate of how many people can fit in a listing. 
 
+listings %>%
+  mutate(price_per = price/accommodates) %>%
+  summarize(price_per = mean(price_per),
+            n = n(),
+            mean_rating = mean(review_scores_rating, na.rm = TRUE))
 
 # Next, let's summarise() the results by computing the average: 
 
