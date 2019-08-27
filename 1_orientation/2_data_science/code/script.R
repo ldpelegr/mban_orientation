@@ -143,6 +143,7 @@ BB_big <- listings %>%
 
 listings %>%
   mutate(price_per = price/accommodates) %>%
+  group_by(neighbourhood) %>%
   summarize(price_per = mean(price_per),
             n = n(),
             mean_rating = mean(review_scores_rating, na.rm = TRUE))
@@ -176,7 +177,15 @@ listings %>%
 # SOLUTION
 # ----------------------------------------------
 
-
+summary_table <- listings %>%
+  mutate(price_per = price/accommodates) %>%
+  group_by(neighbourhood, property_type) %>%
+  summarize(price_per = mean(price_per),
+            n = n(),
+            mean_rating = mean(review_scores_rating, na.rm = TRUE),
+            weekly_avg = mean(weekly_price/accommodates, na.rm = TRUE),
+            capacity = sum(accommodates)
+            )
 
 
 # -----------------------------------------------------
