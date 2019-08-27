@@ -228,14 +228,22 @@ summary_table <- listings %>%
 # SOLUTION
 # ----------------------------------------------
 
+calendar <- calendar %>%
+  mutate(available = (available == 't'))
 
-
-
+september_availability <- calendar %>%
+  mutate(month = month(date, label = TRUE)) %>%
+  filter(month == 'Sep') %>%
+  group_by(listing_id) %>%
+  summarize(nights_available = sum(available == TRUE)) %>%
+  filter(nights_available > 0)
 
 
 # Our next task is to *join* the september_availability table to the listings table. There are many ways to do this, and we're not going to go through all of them today. We will do a left join, which preserves all rows of listings. We need to provide a correspondence between columns of the two tables. 
 
-
+listings <- listings %>%
+  left_join(september_availability,
+            by = c('id' = 'listing_id'))
 
 # Let's take a look at the new column we've created:
 
@@ -244,6 +252,11 @@ summary_table <- listings %>%
 
 # What does the NA mean?
 # Let's filter it out
+
+listings %>%
+  filter(!is.na(nights_available)) %>%
+  group_by(neighbourhood) %>%
+  summarize(nights_available = mean(nights_available))
 
 
 
@@ -259,22 +272,43 @@ summary_table <- listings %>%
 
 # Let's start with a simple histogram of the review scores. We'll build up this plot line by line. 
 
-
+listings %>%
+  ggplot() + 
+  aes(x = review_scores_rating) + 
+  geom_histogram()
 
 
 # How about a bar chart?
 
-
+summary_table %>%
+  filter(property_type == 'Apartment') %>%
+  ggplot() +
+  aes(x = neighbourhood, y = n) + 
+  geom_bar(stat = 'identity')
 
 
 # Ok, well that looks kind of gross. When you have a bar chart and it's gross, you should usually consider flipping the axes, sorting the data, or both: 
 
-
+summary_table %>%
+  filter(property_type == 'Apartment') %>%
+  ggplot() +
+  aes(x = reorder(neighbourhood, n), y = n) +
+  geom_bar(stat = 'identity') +
+  coord_flip() + 
+  xlab("Neighbourhood") + 
+  ylab("Number of Apartments")
+  #    + labs(x = 'Neighborhood', y = 'Number of Apartments', title = 'My bar chart')
 
 
 # Next, let's do a simple scatter plot of the number of reviews vs. review score. We'll again build up this plot line by line. 
 
-
+listings %>%
+  ggplot() + 
+  aes(x = number_of_reviews,
+      y = review_scores_rating,
+      color = property_type) + 
+  geom_point() +
+  theme_bw()
 
 
 # what does the warning mean?
@@ -289,7 +323,15 @@ summary_table <- listings %>%
 # SOLUTION
 # ----------------------------------------------
 
+prices <- calendar %>%
+  group_by(date) %>%
+  summarize(average_price = mean(price))
 
+prices %>%
+  ggplot() + 
+  aes(x = date,
+      y = average_price) + 
+  geom_line()
 
 # Notice anything interesting? We'll come back to this in October...
 
@@ -311,8 +353,24 @@ summary_table <- listings %>%
 # -----------------------------------------------------
 
 
+listings %>%
+  mutate(is_boat = (property_type == 'Boat')) %>%
+  ggplot() + 
+  aes(x = number_of_reviews,
+      y = review_scores_rating,
+      color = is_boat) + 
+  geom_point()
 
 # This is technically correct, but it's not that useful because I can't actually see any of the boat listings. We can fix this using small multiples -- we'll separate out the boats into their own, separate plot. 
+
+listings %>%
+  mutate(is_boat = (property_type == 'Boat')) %>%
+  ggplot() + 
+  aes(x = number_of_reviews,
+      y = review_scores_rating,
+      color = is_boat) + 
+  geom_point() +
+  facet_wrap(~is_boat)
 
 
 
@@ -324,7 +382,20 @@ summary_table <- listings %>%
 
 # When is the best time to stay on a boat? Does it even matter? Create a version of the price-over-time plot that you did in Exercise 6 to answer this question. There should be one trendline for the price per night to stay in a boat, and another trendline for other property types. This exercise will call on multiple skills we've learned so far. In addition to modifying the code given to you in Exercise 6, you'll probably need to use a left-join as well. 
 
+types <- listings %>%
+  select(id, property_type)
 
+calendar %>%
+  left_join(types, by = c("listing_id" = "id")) %>%
+  mutate(is_boat = (property_type == 'Boat')) %>%
+  group_by(date, is_boat) %>%
+  summarize(average_price = mean(price, na.rm = TRUE)) %>%
+  ggplot() + 
+  aes(x = as.Date(date),
+      y = average_price,
+      color = is_boat) +
+  facet_wrap(~is_boat) +
+  geom_line()
 
 
 	
@@ -332,8 +403,19 @@ summary_table <- listings %>%
 
 # We can get a "basemap" of Boston using the ggmap package, as in the following code: 
 
+library(ggmap)
 
+boston_coords <- c(left = -71.1289,
+                   bottom = 42.3201,
+                   right = -71.0189,
+                   top = 42.3701)
 
+basemap <- get_map(location = boston_coords)
+
+ggmap(basemap) +
+  geom_point(aes(x = longitude, y = latitude),
+             data = listings,
+             size = .5)
 
 # The ggmap with basemap is just the same as any other ggplot object, with pre-built aesthetics: lon on the x axis and lat on the y axis. Let's make a plot of all the listings in our data set: 
 
