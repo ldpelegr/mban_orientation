@@ -7,38 +7,45 @@
 # Session -> Set Working Directory -> Source File Location
 
 # load the tidyverse library
-
+library(tidyverse)
+library(lubridate)
 
 # load the data we'll use today
-
+listings = read.csv('../../data/listings.csv')
+calendar = read.csv('../../data/calendar.csv')
 
 # Inspect the data
-
+listings
 
 # Use head() to look at just the first rows
-
+head(listings)
 
 # Use colnames() to get the names of the columns
-
+colnames(listings)
 
 # Use glimpse() to get a structured overview of the data
-
+glimpse(listings)
+glimpse(calendar)
 
 # Let's try to compute the mean of the prices. What happens? What's the problem? 
-
+mean(listings$price)
 
 # I'm going to do just a little bit of data cleaning for you. 
 # There are a few columns in each data set that should be prices (i.e. numbers) but R will read them as strings. 
 # The below three lines fix that. 
 
 # Load in a custom R  file. By the end of today you'll be able to understand most  of it. 
-      
+
+source('clean_prices.R')
 
 # Apply the "clean_prices" custom function to each data set. 
 
+listings <- clean_prices(listings)
+calendar <- clean_prices(calendar)
 
 # Now let's check again 
 
+mean(listings$price)
 
 # Good to go! 
 
@@ -63,10 +70,19 @@
 
 # filter() to include only JP listings
 
+jp_only <- filter(listings, neighbourhood == 'Jamaica Plain')
+
 # arrange() to sort in descending order by rating        
+
+jp_sorted <- arrange(jp_only, desc(review_scores_rating))
 
 # Select only the columns we want to see               
 
+jp_best <- select(jp_sorted,
+                  neighbourhood,
+                  name,
+                  review_scores_rating)
+jp_best
 
 # Problem: this code wastes:
 # 1. **Headspace** to think of names for the intermediate steps ("jp_only", "jp_sorted") that we don't 
@@ -78,22 +94,27 @@
 # Let's see if we can address these problems using nested syntax instead. 
 # Nested syntax refers to simply writing function calls inside other functions. 
 
-
+select(arrange(filter(listings, neighbourhood == 'Jamaica Plain'), 
+               desc(review_scores_rating)), neighbourhood, name, review_scores_rating)
 
 # Ok, that's no longer wasteful, but it's also illegible -- hard to write, hard to troubleshoot. What to do? Back to the slides to discuss the pipe
 
 # -----------------------------------------------------
 # EXERCISE 1: The Pipe
+#        x %>% f() <==> f(x)
 # -----------------------------------------------------
 
 # Working with your partner, please rewrite the JP code using the pipe operator. Here's the first line to get you started:
-
 
 
 # ----------------------------------------------
 # SOLUTION
 # ----------------------------------------------
 
+jp_best2 <- listings %>%
+  filter(neighbourhood == 'Jamaica Plain') %>%
+  arrange(desc(review_scores_rating)) %>%
+  select(neighbourhood, name, review_scores_rating)
 
 # -----------------------------------------------------
 # EXERCISE 2: The Biggest Place in Back Bay
@@ -109,6 +130,10 @@
 # SOLUTION
 # ----------------------------------------------
 
+BB_big <- listings %>%
+  filter(neighbourhood == 'Back Bay') %>%
+  arrange(desc(accommodates), price) %>%
+  select(neighbourhood, name, accommodates, price)
 
 # -----------------------------------------------------------------
 # Exploratory Data Analysis
